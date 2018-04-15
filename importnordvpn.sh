@@ -23,6 +23,7 @@ start=`date +%s`
 UUIDFILE="/tmp/$sessionname.file.dat"
 
 
+
 runtime=$((end-start))
 nice_output(){
   clear
@@ -165,7 +166,7 @@ fi
     #prepare short name for connection
     conname=`echo $line | awk  -F "." '{print $1"-"$4}' `
     # add/import connection to nmcli and grap uuid by regex in awk
-    uuidcon=$(nmcli -w 10 connection import $temp8 type openvpn  file  $line  |  awk 'match($0,  /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/) {print substr($0, RSTART, RLENGTH)}')
+    uuidcon=$(nmcli  connection import $temp8 type openvpn  file  $line  |  awk 'match($0,  /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/) {print substr($0, RSTART, RLENGTH)}')
     #reneme conenction and add username and password
     #nmcli -w 5 con mod $temp8 uuid $uuidcon connection.id $conname +vpn.data "username=$USERNAMEFORVPN" vpn.secrets password="$PASSWFORVPN" &
     echo "$uuidcon,$conname" >> $UUIDFILE
@@ -187,13 +188,23 @@ fi
 
 usernameandpasswd(){
 echo $UUIDFILE
-
+wnump=0
+dxa=6
+dxb=0
+dbl=( )
+flags=30
 while read SLINE
 do
-#  echo `echo $SLINE | cut -d, -f1`
-#  echo `echo $SLINE | cut -d, -f2`
+wnump=$(($wnump+1))
+start_loop1=`date +%s.%N`
 
-  nmcli  con mod $temp8 uuid `echo $SLINE | cut -d, -f1` connection.id `echo $SLINE | cut -d, -f2`  +vpn.data "username=$USERNAMEFORVPN" vpn.secrets password="$PASSWFORVPN" &
+  if [ $dxb -eq $dxa ];then echo -n -e "\n";dxb=0;else dbl[dxb]="$(echo "scale=3;$(date +%s.%N)-$start_loop1"| bc -l)";dxb=$(($dxb+1)); fi
+    average_nmcli_loop=$(echo "scale=2;($(echo ${dbl[*]}| tr ' ' '+'))/${#dbl[*]}" | bc -l )
+CUUID2= `echo $SLINE | cut -d, -f1`
+CNAME2= `echo $SLINE | cut -d, -f2`
+
+nice_output $wnump $numfiles $start $average_nmcli_loop  "${dbl[*]}" $CNAME2
+  nmcli  con mod $temp8 uuid `echo $SLINE | cut -d, -f1` connection.id `echo $SLINE | cut -d, -f2`  +vpn.data "username=$USERNAMEFORVPN" vpn.secrets password="$PASSWFORVPN"
 done < "$UUIDFILE"
 
 }
@@ -240,13 +251,15 @@ if [ "x" != "x$ah" ]; then
                 you can run script in direcotry white space in patch
                 not working.
             -f *RECOMMENDED* Filter: Select country use short name exampe
-                de for Germany fr for france etc... coma sperated.
+                de for Germany fr for France etc... coma sperated.
+                Additional you can use this for selec custom servers
+                example se148,us255,de13....
             -g Get configs from network.
             -c clean DANGER, roemove all connection type vpn from nmcli
             -t Temporary use this for test, added configuration
                 disaper after restart NetworkManager (nmcli)
             -h it is this information
-            -r Test function for fast add servers , all operations
+            -r *NOT RECOMMENDED * Test function for fast add servers , all operations
                 works on ram disk and NetwormManager is restarted every 30 new added configs
       examples:
             ./importnordvpn -u "myemail@exampl.com" -p "P44SSwoRd"
