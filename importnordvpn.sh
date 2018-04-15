@@ -1,12 +1,13 @@
 #!/bin/bash
 #title           :importnordvpn.sh
-#description     :This script  batch import ovpn files  .
+#description     :This script  batch import nordvpn ovpn files tonetworManger my nmcli  .
 #author          :dzaczek consolechars.wordpress.com
+#GIT             : https://github.com/dzaczek/Nordvpn
 #date            :20180415
-#version         :0.5.0a
-#usage           :./bash mkscript.sh -u [username] -p [password] -d [directory with ovpn configs] || -g
+#version         :0.5.1a
+#usage           :./importnordvpn.sh [-u <"username">   -p <"password">][-h][-d <"directory"> || -g][-c][-f pl,ch,uk,ru,de,*-]
 #notes           :Install NetworkManager.x86_64 NetworkManager-openvpn.x86_64 NetworkManager-openvpn-gnome.x86_64 awk
-#notes           : Script reqquired time, for add 1583 vpn config needed 3h 2m
+#notes           : the script requires some time, for add 1583 vpn config needed 3h 2m
 #==============================================================================
 sessionname="$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c 6;echo;)"
 target="/tmp/$sessionname/nordvpn.zip"
@@ -233,17 +234,19 @@ if [ "$#" ==  0 ]; then
   echo "Parameter do not found please use -h for help"  ; exit 1;
   exit 1
 fi
-backupnmcliconnections
+
 #check if -h print help end exit
 if [ "x" != "x$ah" ]; then
   cat << EOF
-          script batch adding openvpn  nordvpn configs to nmcli
-          #time adding  1583 VPN'S  3:02:17.37 total
-          #time adin 2197 7h
-          #time adding 2197 wuth -r parameter form 30 minutes to 1h 20 minutes
-      usage:
-      ./importnordvpn.sh [-u <"username">   -p <"password">][-h][-d <"directory"> || -g][-c][-f pl,ch,uk,ru,de]
 
+          script batch adding openvpn  nordvpn configs to nmcli
+          Aplication Working in 2 cycle , First add all or selected configs to NetworkManager.
+          Second Sycle is rename concentions (shorname) and add username and password.
+          Password  in Gnome is storaged by the  gnome-keyring, after add many servers please wait
+          few minutes to complete keyring work( example 300 connection need around 1 minutes).
+
+      usage:
+      ./importnordvpn.sh [-u <"username">   -p <"password">][-h][-d <"directory"> || -g][-c][-f pl,ch,uk,ru,de,*-]
 
             -u username (is mail ) it must be in qoutes " "
             -p password it must be in qoutes " "
@@ -254,6 +257,8 @@ if [ "x" != "x$ah" ]; then
                 de for Germany fr for France etc... coma sperated.
                 Additional you can use this for selec custom servers
                 example se148,us255,de13....
+                If you want select Double vpn and Onion over vpn
+                user parameter *- example: -f "*-"
             -g Get configs from network.
             -c clean DANGER, roemove all connection type vpn from nmcli
             -t Temporary use this for test, added configuration
@@ -262,23 +267,36 @@ if [ "x" != "x$ah" ]; then
             -r *NOT RECOMMENDED * Test function for fast add servers , all operations
                 works on ram disk and NetwormManager is restarted every 30 new added configs
       examples:
-            ./importnordvpn -u "myemail@exampl.com" -p "P44SSwoRd"
+            ./importnordvpn -u "myemail@exampl.com" -p "P44SSwoRd"  -g
           or
             ./importnordvpn -u "myemail@exampl.com" -p "P44SSwoRd" -d Download/configs/
+
           Get configuration from nordvpn.com
             ./importnordvpn -u "myemail@exampl.com" -p "P44SSwoRd" -d
-          if you want clean configuration
+
+          If you want remove all vpn servers from NetworkManager (-c)
              ./importnordvpn -c
-          clean configuration (remove all vpns from nmcli ). and load new
+
+          Clean configuration (remove all vpns from nmcli ). and load new
             ./importnordvpn -c -u "myemail@exampl.com" -p "P44SSwoRd" -d Download/configs/
+
+          Clean configuration (remove all vpns from nmcli ).Add  new from fresh config
+          dowloaded from nordvpn server (-g) and filer(-f) only few countries
+              ./importnordvpn -c -u "myemail@exampl.com" -p "P44SSwoRd" -g -f uk,ch,de,jp
+
+          Clean configuration (remove all vpns from nmcli ).Add  new from fresh config
+          dowloaded from nordvpn server (-g) and filer(-f) only doublevpn and tor
+              ./importnordvpn -c -u "myemail@exampl.com" -p "P44SSwoRd" -g -f  "*-"
+          ____
       __________________________________________________________
       Report bugs to:dzaczek[animaleatingyellow fruit]sysop.cat
       up home page:https://consolechars.wordpress.com/
-      ______________)____________________________________________
+      __________________________________________________________
 EOF
 
   exit 1
 fi
+backupnmcliconnections
 #check if -c if exist remove all vpn
 if [ "x" != "x$ac" ]; then
 
